@@ -3,6 +3,7 @@ class Button {
   String buttonText;
   float x , y, buttonWidth, buttonHeight;
   color c;   
+  color hover;
   int textSize;
   String containerID;
  
@@ -25,15 +26,17 @@ class Button {
     fill(override);
     rectMode(CENTER);
     noStroke();
-    //stroke(150);
     rect(x, y, buttonWidth, buttonHeight);
     textAlign(CENTER, CENTER);
     fill(0,0,0);  
-    if(textSize > buttonHeight){
-      textSize = int(buttonHeight) - 1;  
+    float renderTextSize = textSize;
+    if(textSize >= buttonHeight){
+      renderTextSize = int(buttonHeight/2);  
     }
-    textSize(textSize);
-    text(buttonText, x, y, buttonWidth, buttonHeight); 
+    if(renderTextSize > 0){
+      textSize(textSize);
+      text(buttonText, x, y, buttonWidth, buttonHeight);  
+    }
   }
   
   boolean contains(float xCord, float yCord){
