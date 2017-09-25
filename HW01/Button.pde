@@ -3,7 +3,11 @@ class Button {
   String buttonText;
   float x , y, buttonWidth, buttonHeight;
   color c;   
+  color hover;
   int textSize;
+  int depth;
+  String containerID;
+  PFont font;
  
   public Button(float x, float y, float buttonWidth, float buttonHeight, color c, String buttonText){
     this.x = x;
@@ -13,6 +17,9 @@ class Button {
     this.c = c;
     this.buttonText = buttonText;
     textSize = 15;
+    containerID = "";
+    depth = 1;
+    font = loadFont("Futura-Medium-48.vlw");
   }
   
   void draw(){
@@ -22,11 +29,18 @@ class Button {
   void draw(color override){
     fill(override);
     rectMode(CENTER);
+    noStroke();
     rect(x, y, buttonWidth, buttonHeight);
     textAlign(CENTER, CENTER);
-    fill(0,0,0);
-    textSize(textSize);
-    text(buttonText, x, y, buttonWidth, buttonHeight); 
+    fill(0,0,0);  
+    float renderTextSize = textSize;
+    if(textSize >= buttonHeight){
+      renderTextSize = int(buttonHeight/2);  
+    }
+    if(renderTextSize > 0){
+      textFont(font, textSize);
+      text(buttonText, x, y, buttonWidth, buttonHeight);  
+    }
   }
   
   boolean contains(float xCord, float yCord){
@@ -42,7 +56,6 @@ class Button {
     return false;  
   }
   
-  //setters
   
   void setColor(color c){
     this.c = c;  

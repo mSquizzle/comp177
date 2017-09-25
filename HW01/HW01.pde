@@ -1,82 +1,186 @@
 TreeNode selectedNode;
+ArrayList<TreeNode> leafList;
+int currentMaxDepth;
 color rectColor;
+color cellHover;
 color hoverColor;
 ArrayList<Button> drawnButtons;
+ArrayList<Button> cellList;
 float prevWidth;
 float prevHeight;
-
+float rootBorderWidth;
 void setup(){
   size(800,400);
-  rectColor = color(55, 150, 80);
-  hoverColor = color(100, 300, 150);
+  //pine
+  rectColor = color(1, 121, 111);
+  //jungle green
+  cellHover = color(41, 171, 135);
+  //emerald
+  hoverColor = color(80, 220, 100);
   surface.setResizable(true);
   TreeParser parser = new TreeParser();   
   selectedNode = parser.parse("./hierarchy2.shf");
-  parser.printTree(selectedNode);
-  squarify(width, height);
+  reset(selectedNode);
+}
+
+void reset(TreeNode node){
+  background(255);
+  prevWidth = width;
+  prevHeight = height;
+  rootBorderWidth = .02 * width;
+  if(width > height){
+      rootBorderWidth = .02*height;  
+  }
+  selectedNode = node;
+  currentMaxDepth = selectedNode.getMaxDepth();
+  drawnButtons = new ArrayList<Button>();
+  cellList = new ArrayList<Button>();
+  leafList = selectedNode.getLeaves();
+  squarify(selectedNode,width, height, width/2, height/2, 1, "");
 }
 
 void mouseClicked(){
-  Button selectedButton = null;
-  for(Button button : drawnButtons){
-    if(button.contains(mouseX, mouseY)){
-      selectedButton = button;  
-    }
-  }
-  if(null != selectedButton){
-    if(mouseButton == LEFT && !selectedButton.buttonText.equals(selectedNode.ID)){
-      for(TreeNode node : selectedNode.children){
-        if(selectedButton.buttonText.equals(node.ID)){
-          selectedNode = node;   
-          println("We had "+selectedNode.ID);
-          println("We've selected "+selectedNode.ID);
-          println("Does is node have children "+!selectedNode.children.isEmpty());
-          for(TreeNode childNode : selectedNode.children){
-             println("Node "+childNode.ID+" - Area "+childNode.getArea()); 
-          }
+  if (mouseButton == RIGHT && !selectedNode.isRoot()){
+      reset(selectedNode.parent);
+  }else if(mouseButton == LEFT && !selectedNode.isLeaf()){
+    Button selectedButton = null;
+    for(Button button : drawnButtons){
+      if(button.contains(mouseX, mouseY)){
+        selectedButton = button; 
+      }
+    } 
+    
+    if(null != selectedButton){     
+      for(TreeNode child : selectedNode.children){
+        if(child.ID.equals(selectedButton.buttonText)){
+        reset(child);
+        return;
         }
       }
-      squarify(width, height);
-    }else if (mouseButton == RIGHT && !selectedNode.isRoot()){
-      //zoom out
-      selectedNode = selectedNode.parent;
-      squarify(width, height);
     }
+    
+    String containerID = "";
+    for(Button cell : cellList){
+      if(cell.contains(mouseX,mouseY)){
+        containerID = cell.containerID;
+      }
+    }
+    if(!"".equals(containerID)){
+      for(TreeNode node : selectedNode.children){
+        if(node.ID.equals(containerID)){
+          reset(node);
+          break;
+        }
+      }
+    }   
   }
 }
 
 void draw(){
   background(255);
   if(prevWidth == width && prevHeight == height){
+    ArrayList<Button> cellMates = new ArrayList<Button>();
+    String containerID = "";
+    
+    for(int i = cellList.size() -1; i >=0; i--){
+      Button cell = cellList.get(i);
+      if(cell.contains(mouseX, mouseY)){
+        containerID = cell.containerID;
+        break;
+      }
+    }
+    
+    if(!"".equals(containerID)){
+      for(Button cell : cellList){
+        if(containerID.equals(cell.containerID) && cell.depth != 2){
+          cell.draw(cell.hover);
+        }else{
+          cell.draw();  
+        }
+      }
+      for(Button leaf : drawnButtons){
+        if(leaf.containerID.equals(containerID)){
+          cellMates.add(leaf);  
+        }
+      }
+    }else{
+      for(Button cell : cellList){
+       
+          cell.draw();  
+      }
+      
+    }
+    
+    
+    Button selectedButton = null;
+    //extremely not performant but...
     for(Button button : drawnButtons){
+      //iterate through the buttons to see if any of them contain the mouse
       if(button.contains(mouseX, mouseY)){
-        button.draw(hoverColor);  
+        selectedButton = button;
+  
+        //determine which cellParent we're in
+        TreeNode cellParent = null;
+        for(TreeNode child : selectedNode.children){
+          if(null != child.path(button.buttonText)){
+            cellParent = child;
+            break;  
+          }
+        }
+        
+        //gather all of the leaves in this cell
+        if(cellParent != null && !cellMates.isEmpty()){
+          ArrayList<TreeNode> treeNodes = cellParent.getLeaves();
+          for(TreeNode leaf : treeNodes){
+            for(int i = 0; i < drawnButtons.size(); i++){
+              Button b = drawnButtons.get(i);
+              if(b.buttonText.equals(leaf.ID)){
+                cellMates.add(b);  
+              }
+            }
+          }
+        }
       }else{
         button.draw();  
       }
     }
+    for(Button b : cellMates){
+         b.draw(cellHover); 
+      }  
+    //draw the selected button
+    if(selectedButton!=null){
+      //draw the cell mate in a 'cell hover' state
+      
+      //draw the node in a hovered state
+      selectedButton.draw(hoverColor);
+    }
   }else{
-    prevWidth = width;
-    prevHeight = height;
-    squarify(width, height);
+    reset(selectedNode);
   }
 }
+
 int numCalled = 0;
-void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort){
-  //println("============");
-  if(numCalled > 0){
-   return; 
-  }
-  //println("Canvas Width : "+width);
-  //println("Passed In Width: "+canvasWidth);
-  //println("Canvas Height : "+height);
-  //println("Passed in height: "+canvasHeight);
-  //println("Center X :"+centerX+" - Center Y : "+centerY);
-  //println("Width is short! "+widthIsShort);
-  //numCalled++;
+void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort, int depth, String parentName){
   float left = centerX - canvasWidth/2;
   float top = centerY - canvasHeight/2;
-  
+  //peak at 1/2 maxDepth (ish); 
+  float pct = (currentMaxDepth - depth +1 )/ (float)currentMaxDepth;
+  float hoverPct = (currentMaxDepth - depth + 1.5)/ (float)currentMaxDepth;
+  //don't want pure black or pure white
+  //color in a range of 50 to 205
+  color c = color(50+pct*155);
+  color hover = color(50+hoverPct*155);
+  Button cell = new Button(centerX, centerY, canvasWidth, canvasHeight, c, "");
+  cell.depth = depth;
+  if(depth!=1){
+     cell.containerID = parentName;
+     cell.hover = hover;
+  }else{
+    cell.hover = c;  
+  }
+ 
+  cellList.add(cell);
+  cell.draw();        
   if(widthIsShort){
     //write from left to right
     float prevRight = left;
@@ -85,57 +189,55 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
       //use canvasHeight as rectHeight
       float rectWidth = area / canvasHeight;
       float rectCenter = prevRight + rectWidth/2;
-      //need centerY - given  
-      Button button = new Button(rectCenter, centerY, rectWidth, canvasHeight, rectColor, node.ID);
-      drawnButtons.add(button);
+      //need centerY - given
+      if(node.isLeaf()){
+        Button button = new Button(rectCenter, centerY, rectWidth-rootBorderWidth, canvasHeight-rootBorderWidth, rectColor, node.ID);
+        drawnButtons.add(button);
+        if(node.parent.ID.equals(selectedNode.ID)){
+          button.containerID = node.ID;  
+        }else{    
+          button.containerID = parentName;  
+        }
+        button.draw();
+      }else{
+        squarify(node, rectWidth-rootBorderWidth, canvasHeight-rootBorderWidth, rectCenter, centerY, depth+1, parentName);  
+      }
       prevRight = prevRight + rectWidth;
-      println("Drawing button "+node.ID+" at ( "+rectCenter+", "+centerY+")");
-      button.draw();
     }
   }else{
     //write from top to bottom
     float prevBottom = top;
-    float sum = 0;
     for(TreeNode node : row){
       float area = node.getArea() * scale;
-      sum += node.getArea();
       //use canvasHeight as rectHeight
       float rectHeight = area / canvasWidth;
       float rectCenter = prevBottom + rectHeight/2;
       //need centerY - given  
-      Button button = new Button(centerX, rectCenter, canvasWidth, rectHeight, rectColor, node.ID);
-      drawnButtons.add(button);
+      if(node.isLeaf()){
+        Button button = new Button(centerX, rectCenter, canvasWidth-rootBorderWidth, rectHeight-rootBorderWidth, rectColor, node.ID);
+        drawnButtons.add(button);
+        if(node.parent.ID.equals(selectedNode.ID)){
+          button.containerID = node.ID;  
+        }else{    
+          button.containerID = parentName;  
+        }
+        button.draw();  
+      }else{
+        squarify(node, canvasWidth-rootBorderWidth, rectHeight-rootBorderWidth, centerX, rectCenter, depth+1, parentName);
+      }
       prevBottom = prevBottom + rectHeight;
-      println("Drawing button "+node.ID+" at ( "+centerX+", "+rectCenter+")");
-      println("Using width "+canvasWidth+" and height "+rectHeight);
-      button.draw();
     }
-    //println("Final bottom is: "+prevBottom);
-    //println("Canvas area "+totalArea);
-    //println("Scale "+scale);
-    //println("Sum area"+sum);
-    //println("Actual scale"+(totalArea/sum));
   }
 }
 
-void squarify(float canvasWidth, float canvasHeight){
-   drawnButtons = new ArrayList<Button>(selectedNode.children.size());
+void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float centerX, float centerY, int depth, String parentName){   
    float canvasArea = canvasHeight * canvasWidth;
-   
-   float right = 0;
-   float bottom = 0;
-   
-   float totalValue = selectedNode.getArea();
-   //todo - use better sorting algorithm
-   ArrayList<TreeNode> children = selectedNode.children;
-   ArrayList<TreeNode> sortedChildren = new ArrayList<TreeNode>(children.size());
-   if(!children.isEmpty()){
-     for(TreeNode node : selectedNode.children){
-        println("Node "+node.ID+" - Area "+node.getArea()); 
-     }
-     
-     
-     
+   //for the initial drawing, we want to start in the upper left corner of our cell
+   float right = centerX - canvasWidth/2;
+   float bottom = centerY - canvasHeight/2;
+   float totalValue = parentNode.getArea();
+   ArrayList<TreeNode> children = parentNode.children;
+   if(!children.isEmpty()){     
      float vaRatio = canvasArea / totalValue;    
      boolean widthIsShort = true;
      float shortSide = canvasWidth;
@@ -144,47 +246,47 @@ void squarify(float canvasWidth, float canvasHeight){
        shortSide = canvasHeight;
      }
      
-     sortedChildren = children;
-     TreeNode maxNode = sortedChildren.get(0);
+     TreeNode maxNode = children.get(0);
      float c1 = maxNode.getArea() * vaRatio;
      float otherSide = c1 / shortSide;
-     float aspectRatio = min(shortSide / otherSide, otherSide / shortSide);
+     float aspectRatio = max(shortSide / otherSide, otherSide / shortSide);
      
      ArrayList<ArrayList<TreeNode>> rows = new ArrayList<ArrayList<TreeNode>>();
      ArrayList<TreeNode> currentRow = new ArrayList<TreeNode>();
      currentRow.add(maxNode);
      //loop begin here
-     for(int i = 1; i < sortedChildren.size(); i++){
-       TreeNode nextNode = sortedChildren.get(i);
+     for(int i = 1; i < children.size(); i++){
+       TreeNode nextNode = children.get(i);
        float c2 = nextNode.getArea() * vaRatio;
        float totalRow = c1 + c2;
        float newOtherSide = totalRow / shortSide;
-       float nextAspectRatio = min(shortSide / newOtherSide, newOtherSide / shortSide);
+       float nextAspectRatio = max(shortSide / newOtherSide, newOtherSide / shortSide);
        
        //better is closest to 1
        float firstDiff = Math.abs(1 - aspectRatio);
        float secondDiff = Math.abs(1 - nextAspectRatio);
        maxNode = nextNode;
+       
        if(firstDiff < secondDiff){
-         //lock down this row and redraw  
+           String passedParent = parentName;
+           if(!parentNode.isRoot() && parentNode.parent.ID.equals(selectedNode.ID)){
+             passedParent = parentNode.ID;    
+           }else if("".equals(parentName)){
+             passedParent = currentRow.get(0).ID;  
+           }
+         //ratio is better without adding this node
+         //lock down this row and draw
          if(widthIsShort){
-           //layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort)
-           //println("shortside "+shortSide);
-           //println("c1 - "+c1);
-           //shortSide = height
-           //println("Otherside "+otherSide);
-           //println("Right "+right);
-           //println("Bottom "+bottom);
-           layoutRow(currentRow, vaRatio, shortSide, otherSide, right + shortSide/2, bottom + otherSide/2, true); 
+           layoutRow(currentRow, vaRatio, shortSide, otherSide, right + shortSide/2, bottom + otherSide/2, true, depth, passedParent); 
            bottom = bottom + otherSide;
          }else{
-           //layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort)
-           layoutRow(currentRow, vaRatio, otherSide, shortSide, right + otherSide/2, bottom + shortSide/2, false); 
+           layoutRow(currentRow, vaRatio, otherSide, shortSide, right + otherSide/2, bottom + shortSide/2, false, depth, passedParent); 
            right = right +  otherSide;
          }
          rows.add(currentRow);
          currentRow = new ArrayList<TreeNode>();
          currentRow.add(nextNode);
+         //reinitialize variables for next iteration
          c1 = c2;
          if(widthIsShort){
            //canvas width does not change
@@ -200,12 +302,10 @@ void squarify(float canvasWidth, float canvasHeight){
            shortSide = canvasHeight;
          }
          otherSide = c1/shortSide;
-         aspectRatio = min(otherSide / shortSide, shortSide / otherSide); 
-         
-         
+         aspectRatio = max(otherSide / shortSide, shortSide / otherSide); 
        }else{
-         //add this to our row and try to add the next node 
-         println("adding node "+nextNode.ID+" to our list");
+         //othewise, our ratio is improved by adding this node
+         //add this node to our list
          currentRow.add(nextNode);
          //update the area
          c1 = c1 + c2;
@@ -214,12 +314,18 @@ void squarify(float canvasWidth, float canvasHeight){
          aspectRatio = nextAspectRatio;
        }
      }
+    String passedParent = parentName;
+    if(!parentNode.isRoot() && parentNode.parent.ID.equals(selectedNode.ID)){
+       passedParent = parentNode.ID;    
+     }else if("".equals(parentName)){
+       passedParent = currentRow.get(0).ID;  
+     }
+     
      rows.add(currentRow);
- //    println("Right "+right);
-  //   println("Bottom "+bottom);
-     layoutRow(currentRow, vaRatio, canvasWidth, canvasHeight, right + canvasWidth/2, bottom + canvasHeight/2, widthIsShort);      
+     layoutRow(currentRow, vaRatio, canvasWidth, canvasHeight, right + canvasWidth/2, bottom + canvasHeight/2, widthIsShort, depth, passedParent);      
    }else{
+     //this is a leaf, just draw it out
      drawnButtons = new ArrayList<Button>(1);
-     drawnButtons.add(new Button( canvasWidth/2, canvasHeight/2,canvasWidth, canvasHeight, rectColor, selectedNode.ID));
+     drawnButtons.add(new Button(canvasWidth/2, canvasHeight/2,canvasWidth, canvasHeight, rectColor, selectedNode.ID));
    }
 }

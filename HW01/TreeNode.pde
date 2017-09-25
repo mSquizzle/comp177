@@ -5,6 +5,22 @@ class TreeNode {
   String ID;
   int area; //double check if we need to swap up to something bigger
 
+  ArrayList<TreeNode> path(String ID){
+    ArrayList<TreeNode> list = null;
+    if(ID.equals(this.ID)){
+      list = new ArrayList<TreeNode>();
+      list.add(this);
+    }else if(!isLeaf()){
+      for(TreeNode child : children){
+        list = child.path(ID);
+        if(null != list){
+          list.add(this);
+          return list;
+        }
+      }
+    }
+    return list;
+  }
   
   TreeNode(String ID, int area){
     this.ID = ID;
@@ -22,6 +38,20 @@ class TreeNode {
      }else{
        return 1 + parent.getDepth();   
      }
+  }
+  
+  int getMaxDepth(){
+    if(isLeaf()){
+      return 0;  
+    }else{
+      int maxDepth = Integer.MIN_VALUE;
+      for(TreeNode node : children){
+        if(node.getMaxDepth() > maxDepth){
+          maxDepth = node.getMaxDepth();  
+        }
+      } 
+      return 1 + maxDepth;
+    }
   }
   
   void sortChildren(){
@@ -44,6 +74,20 @@ class TreeNode {
    this.parent = parent; 
   }
   
+  
+  ArrayList<TreeNode> getLeaves(){
+    ArrayList<TreeNode> myList = new ArrayList<TreeNode>();
+    if(!isLeaf()){
+      for(TreeNode child : children){
+        if(child.isLeaf()){
+          myList.add(child);  
+        }else{
+          myList.addAll(child.getLeaves());
+        }
+      }
+    }
+    return myList;
+  }
   
   int numLeaves(){
     if(isLeaf()){
