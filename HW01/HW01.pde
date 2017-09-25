@@ -18,45 +18,35 @@ void setup(){
 }
 
 void reset(TreeNode node){
+  selectedNode = node;
   currentMaxDepth = selectedNode.getMaxDepth();
   drawnButtons = new ArrayList<Button>();
   squarify(selectedNode,width, height, width/2, height/2, 1);
 }
 
 void mouseClicked(){
-  Button selectedButton = null;
-  for(Button button : drawnButtons){
-    if(button.contains(mouseX, mouseY)){
-      selectedButton = button;  
-    }
-  }
-  if(null != selectedButton){
-    if(mouseButton == LEFT && !selectedButton.buttonText.equals(selectedNode.ID)){
-      for(TreeNode node : selectedNode.children){
-        if(selectedButton.buttonText.equals(node.ID)){
-          selectedNode = node;   
-          for(TreeNode childNode : selectedNode.children){
-             println("Node "+childNode.ID+" - Area "+childNode.getArea()); 
-          }
+  if (mouseButton == RIGHT && !selectedNode.isRoot()){
+      reset(selectedNode.parent);
+  }else if(mouseButton == LEFT && !selectedNode.isLeaf()){
+    Button selectedButton = null;
+    for(Button button : drawnButtons){
+      if(button.contains(mouseX, mouseY)){
+        selectedButton = button; 
+      }
+    } 
+    if(null != selectedButton){
+      for(TreeNode child : selectedNode.children){
+        if(null != child.path(selectedButton.buttonText)){
+          reset(child);
+          break;  
         }
       }
-      squarify(selectedNode,width, height, width/2, height/2, 1);
-    }else if (mouseButton == RIGHT && !selectedNode.isRoot()){
-      reset(selectedNode.parent);
     }
   }
 }
 
 void draw(){
   background(255);
-  /*for(Button button : drawnButtons){
-      if(button.contains(mouseX, mouseY)){
-        button.draw(hoverColor);  
-      }else{
-        button.draw();  
-      }
-    }*/
-    
   if(prevWidth == width && prevHeight == height){
     for(Button button : drawnButtons){
       if(button.contains(mouseX, mouseY)){
