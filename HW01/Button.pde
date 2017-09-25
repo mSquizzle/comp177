@@ -22,9 +22,10 @@ class Button {
   void draw(color override){
     fill(override);
     rectMode(CENTER);
+    noStroke();
     rect(x, y, buttonWidth, buttonHeight);
     textAlign(CENTER, CENTER);
-    fill(0,0,0);
+    fill(0,0,0);  
     textSize(textSize);
     text(buttonText, x, y, buttonWidth, buttonHeight); 
   }

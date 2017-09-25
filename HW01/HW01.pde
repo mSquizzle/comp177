@@ -1,4 +1,5 @@
 TreeNode selectedNode;
+int currentMaxDepth;
 color rectColor;
 color hoverColor;
 ArrayList<Button> drawnButtons;
@@ -13,8 +14,13 @@ void setup(){
   TreeParser parser = new TreeParser();   
   selectedNode = parser.parse("./hierarchy2.shf");
   parser.printTree(selectedNode);
+  reset(selectedNode);
+}
+
+void reset(TreeNode node){
+  currentMaxDepth = selectedNode.getMaxDepth();
   drawnButtons = new ArrayList<Button>();
-  squarify(selectedNode,width, height, width/2, height/2);
+  squarify(selectedNode,width, height, width/2, height/2, 1);
 }
 
 void mouseClicked(){
@@ -29,30 +35,29 @@ void mouseClicked(){
       for(TreeNode node : selectedNode.children){
         if(selectedButton.buttonText.equals(node.ID)){
           selectedNode = node;   
-          println("We had "+selectedNode.ID);
-          println("We've selected "+selectedNode.ID);
-          println("Does is node have children "+!selectedNode.children.isEmpty());
           for(TreeNode childNode : selectedNode.children){
              println("Node "+childNode.ID+" - Area "+childNode.getArea()); 
           }
         }
       }
-      squarify(selectedNode,width, height, width/2, height/2);
+      squarify(selectedNode,width, height, width/2, height/2, 1);
     }else if (mouseButton == RIGHT && !selectedNode.isRoot()){
-      //zoom out
-      selectedNode = selectedNode.parent;
-      squarify(selectedNode, width, height, width/2, height/2);
+      reset(selectedNode.parent);
     }
   }
 }
 
 void draw(){
   background(255);
-  for(Button button : drawnButtons){
-    button.draw();
-  }
-  
-/*  if(prevWidth == width && prevHeight == height){
+  /*for(Button button : drawnButtons){
+      if(button.contains(mouseX, mouseY)){
+        button.draw(hoverColor);  
+      }else{
+        button.draw();  
+      }
+    }*/
+    
+  if(prevWidth == width && prevHeight == height){
     for(Button button : drawnButtons){
       if(button.contains(mouseX, mouseY)){
         button.draw(hoverColor);  
@@ -63,24 +68,14 @@ void draw(){
   }else{
     prevWidth = width;
     prevHeight = height;
-    drawnButtons = new ArrayList<Button>(selectedNode.children.size());
-    squarify(selectedNode, width, height, width/2, height/2);
-  }*/
+    drawnButtons = new ArrayList<Button>();
+    squarify(selectedNode, width, height, width/2, height/2, 1);
+  }
 }
 
 int numCalled = 0;
-void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort){
-  //println("============");
-  if(numCalled > 0){
-   return; 
-  }
-  //println("Canvas Width : "+width);
-  //println("Passed In Width: "+canvasWidth);
-  //println("Canvas Height : "+height);
-  //println("Passed in height: "+canvasHeight);
-  //println("Center X :"+centerX+" - Center Y : "+centerY);
-  //println("Width is short! "+widthIsShort);
-  //numCalled++;
+float frameAdjust = .99;
+void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort, int depth){
   float left = centerX - canvasWidth/2;
   float top = centerY - canvasHeight/2;
   
@@ -96,15 +91,9 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
       if(node.isLeaf()){
         Button button = new Button(rectCenter, centerY, rectWidth, canvasHeight, rectColor, node.ID);
         drawnButtons.add(button);
-        println("Drawing button "+node.ID+" at ( "+rectCenter+", "+centerY+")");
       button.draw();
       }else{
-        //Button button = new Button(rectCenter, centerY, rectWidth, canvasHeight, rectColor, node.ID);
-        //drawnButtons.add(button);
-        //println("Drawing button "+node.ID+" at ( "+rectCenter+", "+centerY+")");
-        //button.draw();
-        //void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float centerX, float centerY)
-        squarify(node, rectWidth, canvasHeight, rectCenter, centerY);  
+        squarify(node, rectWidth*frameAdjust, canvasHeight*frameAdjust, rectCenter, centerY, depth+1);  
       }
       prevRight = prevRight + rectWidth;
      
@@ -123,23 +112,16 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
       if(node.isLeaf()){
         Button button = new Button(centerX, rectCenter, canvasWidth, rectHeight, rectColor, node.ID);
         drawnButtons.add(button);
-        println("Drawing button "+node.ID+" at ( "+centerX+", "+rectCenter+")");
-        println("Using width "+canvasWidth+" and height "+rectHeight);
         button.draw();  
       }else{
-        squarify(node, canvasWidth, rectHeight, centerX, rectCenter);
+        squarify(node, canvasWidth*frameAdjust, rectHeight*frameAdjust, centerX, rectCenter, depth+1);
       }
       prevBottom = prevBottom + rectHeight;
     }
-    //println("Final bottom is: "+prevBottom);
-    //println("Canvas area "+totalArea);
-    //println("Scale "+scale);
-    //println("Sum area"+sum);
-    //println("Actual scale"+(totalArea/sum));
   }
 }
 
-void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float centerX, float centerY){
+void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float centerX, float centerY, int depth){
    
    float canvasArea = canvasHeight * canvasWidth;
    
@@ -195,11 +177,11 @@ void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float 
            //println("Otherside "+otherSide);
            //println("Right "+right);
            //println("Bottom "+bottom);
-           layoutRow(currentRow, vaRatio, shortSide, otherSide, right + shortSide/2, bottom + otherSide/2, true); 
+           layoutRow(currentRow, vaRatio, shortSide, otherSide, right + shortSide/2, bottom + otherSide/2, true, depth+1); 
            bottom = bottom + otherSide;
          }else{
            //layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort)
-           layoutRow(currentRow, vaRatio, otherSide, shortSide, right + otherSide/2, bottom + shortSide/2, false); 
+           layoutRow(currentRow, vaRatio, otherSide, shortSide, right + otherSide/2, bottom + shortSide/2, false, depth+1); 
            right = right +  otherSide;
          }
          rows.add(currentRow);
@@ -237,7 +219,7 @@ void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float 
      rows.add(currentRow);
  //    println("Right "+right);
   //   println("Bottom "+bottom);
-     layoutRow(currentRow, vaRatio, canvasWidth, canvasHeight, right + canvasWidth/2, bottom + canvasHeight/2, widthIsShort);      
+     layoutRow(currentRow, vaRatio, canvasWidth, canvasHeight, right + canvasWidth/2, bottom + canvasHeight/2, widthIsShort, depth+1);      
    }else{
      drawnButtons = new ArrayList<Button>(1);
      drawnButtons.add(new Button( canvasWidth/2, canvasHeight/2,canvasWidth, canvasHeight, rectColor, selectedNode.ID));
