@@ -29,6 +29,9 @@ class Button {
     rect(x, y, buttonWidth, buttonHeight);
     textAlign(CENTER, CENTER);
     fill(0,0,0);  
+    if(textSize > buttonHeight){
+      textSize = int(buttonHeight) - 1;  
+    }
     textSize(textSize);
     text(buttonText, x, y, buttonWidth, buttonHeight); 
   }

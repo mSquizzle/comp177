@@ -5,6 +5,7 @@ color rectColor;
 color cellHover;
 color hoverColor;
 ArrayList<Button> drawnButtons;
+ArrayList<Button> cellList;
 float prevWidth;
 float prevHeight;
 
@@ -23,6 +24,7 @@ void setup(){
 }
 
 void reset(TreeNode node){
+  background(255);
   selectedNode = node;
   currentMaxDepth = selectedNode.getMaxDepth();
   drawnButtons = new ArrayList<Button>();
@@ -32,7 +34,6 @@ void reset(TreeNode node){
 
 void mouseClicked(){
   if (mouseButton == RIGHT && !selectedNode.isRoot()){
-      println("RIGHT CLICK DETECTED");
       reset(selectedNode.parent);
   }else if(mouseButton == LEFT && !selectedNode.isLeaf()){
     Button selectedButton = null;
@@ -49,24 +50,19 @@ void mouseClicked(){
         }
       }
     }
-  }else{
-     println("OTHER CLICK DETECTED "+mouseButton); 
   }
 }
 
 void draw(){
-  //background(255);
   if(prevWidth == width && prevHeight == height){
     ArrayList<Button> cellMates = new ArrayList<Button>();
     Button selectedButton = null;
+    //extremely not performant but...
     for(Button button : drawnButtons){
+      //iterate through the buttons to see if any of them contain the mouse
       if(button.contains(mouseX, mouseY)){
         selectedButton = button;
-        //we have a selected button
-        //need to traverse up the tree to find which branch from parent we're in
-        //find any leaf  in that parent and highlight
-        //alternatively - add in containing structure so each button knows what cell it belongs to?
-              
+  
         TreeNode cellParent = null;
         for(TreeNode child : selectedNode.children){
           if(null != child.path(button.buttonText)){
@@ -100,13 +96,14 @@ void draw(){
     prevWidth = width;
     prevHeight = height;
     drawnButtons = new ArrayList<Button>();
+    background(255);
     squarify(selectedNode, width, height, width/2, height/2, 1);
   }
 }
 
 int numCalled = 0;
-float largeFrameAdjust = .98;
-float smallFrameAdjust = .95;
+float largeFrameAdjust = .95;
+float smallFrameAdjust = .94;
 void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort, int depth){
   float left = centerX - canvasWidth/2;
   float top = centerY - canvasHeight/2;
@@ -129,12 +126,11 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
       if(node.isLeaf()){
         Button button = new Button(rectCenter, centerY, rectWidth*smallFrameAdjust, canvasHeight*largeFrameAdjust, rectColor, node.ID);
         drawnButtons.add(button);
-      button.draw();
+        button.draw();
       }else{
         squarify(node, rectWidth*smallFrameAdjust, canvasHeight*largeFrameAdjust, rectCenter, centerY, depth+1);  
       }
       prevRight = prevRight + rectWidth;
-     
     }
   }else{
     //write from top to bottom
