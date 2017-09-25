@@ -10,9 +10,12 @@ float prevHeight;
 
 void setup(){
   size(800,400);
-  rectColor = color(55, 150, 80);
-  cellHover = color(75, 225, 120);
-  hoverColor = color(100, 300, 150);
+  //pine
+  rectColor = color(1, 121, 111);
+  //jungle green
+  cellHover = color(41, 171, 135);
+  //emerald
+  hoverColor = color(80, 220, 100);
   surface.setResizable(true);
   TreeParser parser = new TreeParser();   
   selectedNode = parser.parse("./hierarchy2.shf");
@@ -54,20 +57,45 @@ void mouseClicked(){
 void draw(){
   //background(255);
   if(prevWidth == width && prevHeight == height){
+    ArrayList<Button> cellMates = new ArrayList<Button>();
+    Button selectedButton = null;
     for(Button button : drawnButtons){
       if(button.contains(mouseX, mouseY)){
-        button.draw(hoverColor);  
+        selectedButton = button;
         //we have a selected button
         //need to traverse up the tree to find which branch from parent we're in
         //find any leaf  in that parent and highlight
         //alternatively - add in containing structure so each button knows what cell it belongs to?
-        
-        
+              
+        TreeNode cellParent = null;
+        for(TreeNode child : selectedNode.children){
+          if(null != child.path(button.buttonText)){
+            cellParent = child;
+            break;  
+          }
+        }
+        if(cellParent != null){
+          ArrayList<TreeNode> treeNodes = cellParent.getLeaves();
+          for(TreeNode leaf : treeNodes){
+            for(int i = 0; i < drawnButtons.size(); i++){
+              Button b = drawnButtons.get(i);
+              if(b.buttonText.equals(leaf.ID)){
+                cellMates.add(b);  
+              }
+            }
+          }
+        }
         
       }else{
         button.draw();  
       }
     }
+    if(selectedButton!=null){
+        for(Button b : cellMates){
+         b.draw(cellHover); 
+        }  
+        selectedButton.draw(hoverColor);
+      }
   }else{
     prevWidth = width;
     prevHeight = height;
@@ -84,10 +112,8 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
   float top = centerY - canvasHeight/2;
   //peak at 1/2 maxDepth (ish); 
   float pct = (currentMaxDepth - depth +1 )/ (float)currentMaxDepth;
-  println("PCT "+pct);
-  println("Current Max depth "+currentMaxDepth);
-  println("Current depth "+depth);
-  fill(pct*255);
+  //50+
+  fill(50+pct*155);
   noStroke();
   rectMode(CENTER);
   rect(centerX, centerY, canvasWidth, canvasHeight);

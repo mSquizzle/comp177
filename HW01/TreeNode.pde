@@ -76,8 +76,8 @@ class TreeNode {
   
   
   ArrayList<TreeNode> getLeaves(){
+    ArrayList<TreeNode> myList = new ArrayList<TreeNode>();
     if(!isLeaf()){
-      ArrayList<TreeNode> myList = new ArrayList<TreeNode>();  
       for(TreeNode child : children){
         if(child.isLeaf()){
           myList.add(child);  
@@ -85,9 +85,8 @@ class TreeNode {
           myList.addAll(child.getLeaves());
         }
       }
-      return myList;
     }
-    return null;
+    return myList;
   }
   
   int numLeaves(){
