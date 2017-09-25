@@ -24,6 +24,20 @@ class TreeNode {
      }
   }
   
+  int getMaxDepth(){
+    if(isLeaf()){
+      return 1;  
+    }else{
+      int maxDepth = Integer.MIN_VALUE;
+      for(TreeNode node : children){
+        if(node.getMaxDepth() > maxDepth){
+          maxDepth = node.getMaxDepth();  
+        }
+      } 
+      return 1 + maxDepth;
+    }
+  }
+  
   void sortChildren(){
     ArrayList<TreeNode> sortedChildren = new ArrayList<TreeNode>(children.size()); 
     for(TreeNode child : children){
