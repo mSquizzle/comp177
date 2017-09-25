@@ -4,6 +4,7 @@ class Button {
   float x , y, buttonWidth, buttonHeight;
   color c;   
   int textSize;
+  String containerID;
  
   public Button(float x, float y, float buttonWidth, float buttonHeight, color c, String buttonText){
     this.x = x;
@@ -13,6 +14,7 @@ class Button {
     this.c = c;
     this.buttonText = buttonText;
     textSize = 15;
+    containerID = "";
   }
   
   void draw(){
@@ -23,6 +25,7 @@ class Button {
     fill(override);
     rectMode(CENTER);
     noStroke();
+    //stroke(150);
     rect(x, y, buttonWidth, buttonHeight);
     textAlign(CENTER, CENTER);
     fill(0,0,0);  

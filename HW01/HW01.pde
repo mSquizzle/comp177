@@ -1,6 +1,8 @@
 TreeNode selectedNode;
+ArrayList<TreeNode> leafList;
 int currentMaxDepth;
 color rectColor;
+color cellHover;
 color hoverColor;
 ArrayList<Button> drawnButtons;
 float prevWidth;
@@ -9,11 +11,11 @@ float prevHeight;
 void setup(){
   size(800,400);
   rectColor = color(55, 150, 80);
+  cellHover = color(75, 225, 120);
   hoverColor = color(100, 300, 150);
   surface.setResizable(true);
   TreeParser parser = new TreeParser();   
   selectedNode = parser.parse("./hierarchy2.shf");
-  parser.printTree(selectedNode);
   reset(selectedNode);
 }
 
@@ -21,11 +23,13 @@ void reset(TreeNode node){
   selectedNode = node;
   currentMaxDepth = selectedNode.getMaxDepth();
   drawnButtons = new ArrayList<Button>();
+  leafList = selectedNode.getLeaves();
   squarify(selectedNode,width, height, width/2, height/2, 1);
 }
 
 void mouseClicked(){
   if (mouseButton == RIGHT && !selectedNode.isRoot()){
+      println("RIGHT CLICK DETECTED");
       reset(selectedNode.parent);
   }else if(mouseButton == LEFT && !selectedNode.isLeaf()){
     Button selectedButton = null;
@@ -42,15 +46,24 @@ void mouseClicked(){
         }
       }
     }
+  }else{
+     println("OTHER CLICK DETECTED "+mouseButton); 
   }
 }
 
 void draw(){
-  background(255);
+  //background(255);
   if(prevWidth == width && prevHeight == height){
     for(Button button : drawnButtons){
       if(button.contains(mouseX, mouseY)){
         button.draw(hoverColor);  
+        //we have a selected button
+        //need to traverse up the tree to find which branch from parent we're in
+        //find any leaf  in that parent and highlight
+        //alternatively - add in containing structure so each button knows what cell it belongs to?
+        
+        
+        
       }else{
         button.draw();  
       }
@@ -64,11 +77,20 @@ void draw(){
 }
 
 int numCalled = 0;
-float frameAdjust = .99;
+float largeFrameAdjust = .98;
+float smallFrameAdjust = .95;
 void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort, int depth){
   float left = centerX - canvasWidth/2;
   float top = centerY - canvasHeight/2;
-  
+  //peak at 1/2 maxDepth (ish); 
+  float pct = (currentMaxDepth - depth +1 )/ (float)currentMaxDepth;
+  println("PCT "+pct);
+  println("Current Max depth "+currentMaxDepth);
+  println("Current depth "+depth);
+  fill(pct*255);
+  noStroke();
+  rectMode(CENTER);
+  rect(centerX, centerY, canvasWidth, canvasHeight);
   if(widthIsShort){
     //write from left to right
     float prevRight = left;
@@ -79,11 +101,11 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
       float rectCenter = prevRight + rectWidth/2;
       //need centerY - given
       if(node.isLeaf()){
-        Button button = new Button(rectCenter, centerY, rectWidth, canvasHeight, rectColor, node.ID);
+        Button button = new Button(rectCenter, centerY, rectWidth*smallFrameAdjust, canvasHeight*largeFrameAdjust, rectColor, node.ID);
         drawnButtons.add(button);
       button.draw();
       }else{
-        squarify(node, rectWidth*frameAdjust, canvasHeight*frameAdjust, rectCenter, centerY, depth+1);  
+        squarify(node, rectWidth*smallFrameAdjust, canvasHeight*largeFrameAdjust, rectCenter, centerY, depth+1);  
       }
       prevRight = prevRight + rectWidth;
      
@@ -100,34 +122,25 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
       float rectCenter = prevBottom + rectHeight/2;
       //need centerY - given  
       if(node.isLeaf()){
-        Button button = new Button(centerX, rectCenter, canvasWidth, rectHeight, rectColor, node.ID);
+        Button button = new Button(centerX, rectCenter, canvasWidth*largeFrameAdjust, rectHeight*smallFrameAdjust, rectColor, node.ID);
         drawnButtons.add(button);
         button.draw();  
       }else{
-        squarify(node, canvasWidth*frameAdjust, rectHeight*frameAdjust, centerX, rectCenter, depth+1);
+        squarify(node, canvasWidth*largeFrameAdjust, rectHeight*smallFrameAdjust, centerX, rectCenter, depth+1);
       }
       prevBottom = prevBottom + rectHeight;
     }
   }
 }
 
-void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float centerX, float centerY, int depth){
-   
+void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float centerX, float centerY, int depth){   
    float canvasArea = canvasHeight * canvasWidth;
-   
    //for the initial drawing, we want to start in the upper left corner of our cell
    float right = centerX - canvasWidth/2;
    float bottom = centerY - canvasHeight/2;
-   
    float totalValue = parentNode.getArea();
-   //todo - use better sorting algorithm
    ArrayList<TreeNode> children = parentNode.children;
-   ArrayList<TreeNode> sortedChildren = new ArrayList<TreeNode>(children.size());
-   if(!children.isEmpty()){
-     for(TreeNode node : parentNode.children){
-        println("Node "+node.ID+" - Area "+node.getArea()); 
-     }
-     
+   if(!children.isEmpty()){     
      float vaRatio = canvasArea / totalValue;    
      boolean widthIsShort = true;
      float shortSide = canvasWidth;
@@ -136,47 +149,40 @@ void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float 
        shortSide = canvasHeight;
      }
      
-     sortedChildren = children;
-     TreeNode maxNode = sortedChildren.get(0);
+     TreeNode maxNode = children.get(0);
      float c1 = maxNode.getArea() * vaRatio;
      float otherSide = c1 / shortSide;
-     float aspectRatio = min(shortSide / otherSide, otherSide / shortSide);
+     float aspectRatio = max(shortSide / otherSide, otherSide / shortSide);
      
      ArrayList<ArrayList<TreeNode>> rows = new ArrayList<ArrayList<TreeNode>>();
      ArrayList<TreeNode> currentRow = new ArrayList<TreeNode>();
      currentRow.add(maxNode);
      //loop begin here
-     for(int i = 1; i < sortedChildren.size(); i++){
-       TreeNode nextNode = sortedChildren.get(i);
+     for(int i = 1; i < children.size(); i++){
+       TreeNode nextNode = children.get(i);
        float c2 = nextNode.getArea() * vaRatio;
        float totalRow = c1 + c2;
        float newOtherSide = totalRow / shortSide;
-       float nextAspectRatio = min(shortSide / newOtherSide, newOtherSide / shortSide);
+       float nextAspectRatio = max(shortSide / newOtherSide, newOtherSide / shortSide);
        
        //better is closest to 1
        float firstDiff = Math.abs(1 - aspectRatio);
        float secondDiff = Math.abs(1 - nextAspectRatio);
        maxNode = nextNode;
        if(firstDiff < secondDiff){
-         //lock down this row and redraw  
+         //ratio is better without adding this node
+         //lock down this row and draw
          if(widthIsShort){
-           //layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort)
-           //println("shortside "+shortSide);
-           //println("c1 - "+c1);
-           //shortSide = height
-           //println("Otherside "+otherSide);
-           //println("Right "+right);
-           //println("Bottom "+bottom);
-           layoutRow(currentRow, vaRatio, shortSide, otherSide, right + shortSide/2, bottom + otherSide/2, true, depth+1); 
+           layoutRow(currentRow, vaRatio, shortSide, otherSide, right + shortSide/2, bottom + otherSide/2, true, depth); 
            bottom = bottom + otherSide;
          }else{
-           //layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float canvasHeight, float centerX, float centerY, boolean widthIsShort)
-           layoutRow(currentRow, vaRatio, otherSide, shortSide, right + otherSide/2, bottom + shortSide/2, false, depth+1); 
+           layoutRow(currentRow, vaRatio, otherSide, shortSide, right + otherSide/2, bottom + shortSide/2, false, depth); 
            right = right +  otherSide;
          }
          rows.add(currentRow);
          currentRow = new ArrayList<TreeNode>();
          currentRow.add(nextNode);
+         //reinitialize variables for next iteration
          c1 = c2;
          if(widthIsShort){
            //canvas width does not change
@@ -192,12 +198,10 @@ void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float 
            shortSide = canvasHeight;
          }
          otherSide = c1/shortSide;
-         aspectRatio = min(otherSide / shortSide, shortSide / otherSide); 
-         
-         
+         aspectRatio = max(otherSide / shortSide, shortSide / otherSide); 
        }else{
-         //add this to our row and try to add the next node 
-         println("adding node "+nextNode.ID+" to our list");
+         //othewise, our ratio is improved by adding this node
+         //add this node to our list
          currentRow.add(nextNode);
          //update the area
          c1 = c1 + c2;
@@ -207,10 +211,9 @@ void squarify(TreeNode parentNode, float canvasWidth, float canvasHeight, float 
        }
      }
      rows.add(currentRow);
- //    println("Right "+right);
-  //   println("Bottom "+bottom);
-     layoutRow(currentRow, vaRatio, canvasWidth, canvasHeight, right + canvasWidth/2, bottom + canvasHeight/2, widthIsShort, depth+1);      
+     layoutRow(currentRow, vaRatio, canvasWidth, canvasHeight, right + canvasWidth/2, bottom + canvasHeight/2, widthIsShort, depth);      
    }else{
+     //this is a leaf, just draw it out
      drawnButtons = new ArrayList<Button>(1);
      drawnButtons.add(new Button( canvasWidth/2, canvasHeight/2,canvasWidth, canvasHeight, rectColor, selectedNode.ID));
    }

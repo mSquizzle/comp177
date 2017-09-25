@@ -42,7 +42,7 @@ class TreeNode {
   
   int getMaxDepth(){
     if(isLeaf()){
-      return 1;  
+      return 0;  
     }else{
       int maxDepth = Integer.MIN_VALUE;
       for(TreeNode node : children){
@@ -74,6 +74,21 @@ class TreeNode {
    this.parent = parent; 
   }
   
+  
+  ArrayList<TreeNode> getLeaves(){
+    if(!isLeaf()){
+      ArrayList<TreeNode> myList = new ArrayList<TreeNode>();  
+      for(TreeNode child : children){
+        if(child.isLeaf()){
+          myList.add(child);  
+        }else{
+          myList.addAll(child.getLeaves());
+        }
+      }
+      return myList;
+    }
+    return null;
+  }
   
   int numLeaves(){
     if(isLeaf()){
