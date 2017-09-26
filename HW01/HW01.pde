@@ -78,6 +78,38 @@ void mouseClicked(){
 
 void draw(){
   background(255);
+  
+   //EM Added
+  hoverColor = color(80, 220, 100);
+  //Change button color
+  for(Button button : drawnButtons){
+      if(button.contains(mouseX, mouseY)){            
+         for(TreeNode node : selectedNode.children){      
+            if(button.buttonText.equals(node.ID)){               
+              TreeNode thisNode = node;
+              println(thisNode.numLeaves());
+              int newColor = 25;
+              if(int(thisNode.numLeaves()) == 0){
+                newColor = 0;
+              }else if (int(thisNode.numLeaves()) < 2){
+                newColor = 75;
+              }else if (int(thisNode.numLeaves()) < 3){
+                newColor = 100;
+              }else if (int(thisNode.numLeaves()) < 4){
+                newColor = 150;
+              }else if (int(thisNode.numLeaves()) < 5){
+                newColor = 200;
+              }else{
+                newColor = 250;           
+              }
+              hoverColor = color(98, newColor, 150);                
+             }
+          }
+      }
+  }
+  //END of EM add 9/25
+  
+  
   if(prevWidth == width && prevHeight == height){
     ArrayList<Button> cellMates = new ArrayList<Button>();
     String containerID = "";
