@@ -23,7 +23,24 @@ class Button {
   }
   
   void draw(){
-    draw(c,c); 
+    draw(c); 
+  }
+  
+  void draw(color override){
+     fill(override);
+      rectMode(CENTER);
+      noStroke();
+    rect(x, y, buttonWidth, buttonHeight);
+    textAlign(CENTER, CENTER);
+    fill(0,0,0);  
+    float renderTextSize = textSize;
+    if(textSize >= buttonHeight){
+      renderTextSize = int(buttonHeight/2);  
+    }
+    if(renderTextSize > 0){
+      textFont(font, textSize);
+      text(buttonText, x, y, buttonWidth, buttonHeight);  
+    }
   }
   
   void draw(color override,color gradient){

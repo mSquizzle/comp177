@@ -80,29 +80,34 @@ void draw(){
   background(255);
   
    //EM Added
-  hoverColor = color(80, 220, 100);
+  color gradientColor = color(80, 220, 100);
+  if(drawnButtons.size() == 1){
+    
+  }
+  
   //Change button color
   for(Button button : drawnButtons){
       if(button.contains(mouseX, mouseY)){            
-         for(TreeNode node : selectedNode.children){      
-            if(button.buttonText.equals(node.ID)){               
-              TreeNode thisNode = node;
-              println(thisNode.numLeaves());
+         for(TreeNode node : selectedNode.children){ 
+            ArrayList<TreeNode> path = node.path(button.buttonText);
+            if(button.buttonText.equals(node.ID) || (null != path && !path.isEmpty())){               
+              int distance = path == null ? 0 : path.size();
               int newColor = 25;
-              if(int(thisNode.numLeaves()) == 0){
+              if(distance == 0){
                 newColor = 0;
-              }else if (int(thisNode.numLeaves()) < 2){
+              }else if (distance < 2){
                 newColor = 75;
-              }else if (int(thisNode.numLeaves()) < 3){
+              }else if (distance < 3){
                 newColor = 100;
-              }else if (int(thisNode.numLeaves()) < 4){
+              }else if (distance < 4){
                 newColor = 150;
-              }else if (int(thisNode.numLeaves()) < 5){
+              }else if (distance < 5){
                 newColor = 200;
               }else{
                 newColor = 250;           
               }
-              hoverColor = color(98, newColor, 150);                
+              gradientColor = color(98, newColor, 150);
+              break;
              }
           }
       }
@@ -125,7 +130,7 @@ void draw(){
     if(!"".equals(containerID)){
       for(Button cell : cellList){
         if(containerID.equals(cell.containerID) && cell.depth != 2){
-          cell.draw(cell.hover, cell.hover);
+          cell.draw(cell.hover);
         }else{
           cell.draw();  
         }
@@ -178,13 +183,11 @@ void draw(){
     }
     for(Button b : cellMates){
          b.draw(cellHover); 
-      }  
+    }  
     //draw the selected button
     if(selectedButton!=null){
-      //draw the cell mate in a 'cell hover' state
-      
       //draw the node in a hovered state
-      selectedButton.draw(hoverColor);
+      selectedButton.draw(gradientColor, hoverColor);
     }
   }else{
     reset(selectedNode);
@@ -209,8 +212,7 @@ void layoutRow(ArrayList<TreeNode> row, float scale, float canvasWidth, float ca
      cell.hover = hover;
   }else{
     cell.hover = c;  
-  }
- 
+  } 
   cellList.add(cell);
   cell.draw();        
   if(widthIsShort){
