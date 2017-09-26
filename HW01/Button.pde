@@ -23,10 +23,10 @@ class Button {
   }
   
   void draw(){
-    draw(c); 
+    draw(c,c); 
   }
   
-  void draw(color override){
+  void draw(color override,color gradient){
     fill(override);
     rectMode(CENTER);
     noStroke();
@@ -37,6 +37,28 @@ class Button {
     if(textSize >= buttonHeight){
       renderTextSize = int(buttonHeight/2);  
     }
+    
+    ////
+    float halfHeight = buttonHeight/2;
+    float halfWidth = buttonWidth/2;
+    if(buttonWidth > buttonHeight){  
+      for (int i = int(y-halfHeight); i <= y+halfHeight; i++) {
+        float inter = map(i, y-halfHeight, y+halfHeight, 0, 1);
+        color gradientMap = lerpColor(override, gradient, inter);
+        stroke(gradientMap);
+        line(x-halfWidth, i, x+halfWidth, i);
+      }
+    }else{
+      for (int i = int(x-halfWidth); i <= x+halfWidth; i++) {
+        float inter = map(i, x-halfWidth, x+halfWidth, 0, 1);
+        color gradientMap = lerpColor(override, gradient, inter);
+        stroke(gradientMap);
+        line(i, y-halfHeight, i, y+halfHeight);
+      }
+    }
+    /////
+    
+    
     if(renderTextSize > 0){
       textFont(font, textSize);
       text(buttonText, x, y, buttonWidth, buttonHeight);  
