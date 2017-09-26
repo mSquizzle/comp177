@@ -82,7 +82,12 @@ void draw(){
    //EM Added
   color gradientColor = color(80, 220, 100);
   if(drawnButtons.size() == 1){
-    
+    Button button = drawnButtons.get(0);
+    if(button.contains(mouseX, mouseY)){
+       gradientColor = color(80, 25, 100);
+       button.draw(gradientColor, hoverColor);
+       return;
+    }
   }
   
   //Change button color
@@ -106,6 +111,8 @@ void draw(){
               }else{
                 newColor = 250;           
               }
+              //todo - switch to pct? 
+              //newColor = 25 + distance / currentMaxDepth * 225;
               gradientColor = color(98, newColor, 150);
               break;
              }
